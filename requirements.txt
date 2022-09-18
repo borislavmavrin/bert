@@ -1,2 +1,2 @@
-tensorflow >= 1.11.0   # CPU Version of TensorFlow.
-# tensorflow-gpu  >= 1.11.0  # GPU version of TensorFlow.
+protobuf==3.20.0
+tensorflow-gpu==1.13.1
