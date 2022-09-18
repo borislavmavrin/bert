@@ -70,6 +70,9 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps, use_tpu):
   tvars = tf.trainable_variables()
   grads = tf.gradients(loss, tvars)
 
+  tf.summary.scalar("lr", learning_rate)
+  tf.summary.scalar("grad_norm", tf.global_norm(grads))
+
   # This is how the model was pre-trained.
   (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
 

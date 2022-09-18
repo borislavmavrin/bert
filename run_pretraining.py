@@ -427,7 +427,13 @@ def main(_):
         FLAGS.tpu_name, zone=FLAGS.tpu_zone, project=FLAGS.gcp_project)
 
   is_per_host = tf.contrib.tpu.InputPipelineConfig.PER_HOST_V2
+
+  gpu_options = tf.GPUOptions(allow_growth=True)
+  session_config = tf.ConfigProto(gpu_options=gpu_options)
+
   run_config = tf.contrib.tpu.RunConfig(
+      save_summary_steps=1,
+      session_config=session_config,
       cluster=tpu_cluster_resolver,
       master=FLAGS.master,
       model_dir=FLAGS.output_dir,
