@@ -38,6 +38,10 @@ flags.DEFINE_string(
     "Input TF example files (can be a glob or comma separated).")
 
 flags.DEFINE_string(
+    "eval_input_file", None,
+    "Input TF example file for evaluation.")
+
+flags.DEFINE_string(
     "output_dir", None,
     "The output directory where the model checkpoints will be written.")
 
@@ -421,6 +425,9 @@ def main(_):
   for input_file in input_files:
     tf.logging.info("  %s" % input_file)
 
+  tf.logging.info("*** Input Files For Evaluation ***")
+  tf.logging.info("  %s" % FLAGS.eval_input_file)
+
   tpu_cluster_resolver = None
   if FLAGS.use_tpu and FLAGS.tpu_name:
     tpu_cluster_resolver = tf.contrib.cluster_resolver.TPUClusterResolver(
@@ -469,7 +476,21 @@ def main(_):
         max_seq_length=FLAGS.max_seq_length,
         max_predictions_per_seq=FLAGS.max_predictions_per_seq,
         is_training=True)
-    estimator.train(input_fn=train_input_fn, max_steps=FLAGS.num_train_steps)
+    eval_input_fn = input_fn_builder(
+        input_files=[FLAGS.eval_input_file],
+        max_seq_length=FLAGS.max_seq_length,
+        max_predictions_per_seq=FLAGS.max_predictions_per_seq,
+        is_training=False)
+    evaluator = tf.estimator.experimental.InMemoryEvaluatorHook(
+        estimator, eval_input_fn, every_n_iter=1, steps=1)
+    early_stopping = tf.contrib.estimator.stop_if_no_decrease_hook(
+        estimator,
+        run_every_secs=None,
+        run_every_steps=1,
+        metric_name='loss',
+        max_steps_without_decrease=5,
+        min_steps=3)
+    estimator.train(input_fn=train_input_fn, max_steps=FLAGS.num_train_steps, hooks=[evaluator, early_stopping])
 
   if FLAGS.do_eval:
     tf.logging.info("***** Running evaluation *****")
